@@ -97,7 +97,9 @@ export class GeminiService {
   }
 
   static async getDrawingIdea(): Promise<string> {
-    const prompt = "fun, creative drawing idea for a child.one sentence only. like: 'A friendly robot drinking a milkshake' or 'A snail with a birthday cake for a shell'.";
+  static async getDrawingIdea(artMode: string = 'happy', modePrefix: string = ''): Promise<string> {
+    const modeContext = modePrefix ? `${modePrefix}, ` : '';
+    const prompt = `${modeContext}fun, creative drawing idea for a child in ${artMode} style. One sentence only. Like: 'A friendly robot drinking a milkshake' or 'A snail with a birthday cake for a shell'.`;
     const payload = {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
     };
@@ -113,7 +115,9 @@ export class GeminiService {
   }
 
   static async recognizeImage(base64ImageData: string): Promise<string> {
-    const descriptionPrompt = "short subject focus common description only, No colors. No intoductions, child sensitive, child safe, starting with 'line sketch of' E.g: smiling sun, mushroom house with a girl";
+  static async recognizeImage(base64ImageData: string, artMode: string = 'happy', modePrefix: string = ''): Promise<string> {
+    const modeContext = modePrefix ? `in ${artMode} style with ${modePrefix} elements, ` : '';
+    const descriptionPrompt = `short subject focus common description only, ${modeContext}No colors. No introductions, child sensitive, child safe, starting with 'line sketch of' E.g: smiling sun, mushroom house with a girl`;
     const payload = {
       contents: [
         {
@@ -163,7 +167,9 @@ export class GeminiService {
   // }
 
   static async generateStory(recognizedImage: string): Promise<string> {
-    const prompt = `Write a very short (2-3 sentences), happy, moral,health warning, simple story for a 3-5 years old child about this:
+  static async generateStory(recognizedImage: string, artMode: string = 'happy', storyStyle: string = ''): Promise<string> {
+    const styleContext = storyStyle || 'happy, simple story';
+    const prompt = `Write a very short (2-3 sentences), ${styleContext} for a 3-5 years old child about this:
     // Recognized Image , trim any words like 'line sketch of' or 'photo of' or drawing of' from the start.
     "${recognizedImage.replace(/^(line sketch of|photo of|drawing of)\s+/i, '')}"`;
     const payload = {

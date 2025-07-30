@@ -121,6 +121,10 @@ const AIDrawingBook: React.FC<AIDrawingBookProps> = ({ onBack }) => {
     // Pen tool handlers
     handleColoringMouseMove,
     handleColoringMouseUp,
+
+    // Art mode
+    selectedArtMode,
+    setSelectedArtMode,
   } = useAIDrawingBookLogic();
 
   // Track story mode based on story generation/reading states
@@ -245,20 +249,20 @@ const AIDrawingBook: React.FC<AIDrawingBookProps> = ({ onBack }) => {
               <div className="text-white text-xs text-center mb-2 opacity-0 lg:opacity-100 font-semibold">
                 Art Mode
               </div>
-              <div className="flex flex-col gap-1 max-h-32 overflow-y-auto">
+              <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
                 {artModes.map((mode) => (
                   <button
                     key={mode.id}
                     onClick={() => setSelectedArtMode(mode.id)}
-                    className={`w-full aspect-square rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 flex flex-col items-center justify-center text-xs font-bold ${
+                    className={`w-full h-12 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 flex items-center justify-center text-xs font-bold ${
                       selectedArtMode === mode.id
                         ? `bg-gradient-to-r ${mode.color} border-white text-white scale-105`
                         : 'bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30'
                     }`}
                     title={`${mode.label} Mode`}
                   >
-                    <span className="text-lg">{mode.emoji}</span>
-                    <span className="text-xs mt-1 opacity-0 lg:opacity-100">{mode.label}</span>
+                    <span className="text-base mr-1">{mode.emoji}</span>
+                    <span className="text-xs opacity-0 lg:opacity-100">{mode.label}</span>
                   </button>
                 ))}
               </div>

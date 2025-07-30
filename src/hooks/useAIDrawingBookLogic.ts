@@ -60,6 +60,7 @@ export const useAIDrawingBookLogic = (selectedArtMode: string = 'happy') => {
   const [showStorySection, setShowStorySection] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isReadingStory, setIsReadingStory] = useState(false);
+  const [selectedArtMode, setSelectedArtMode] = useState<string>('happy');
   const [isTypingStory, setIsTypingStory] = useState(false);
   const [displayedStory, setDisplayedStory] = useState<string>("");
 
@@ -127,6 +128,49 @@ export const useAIDrawingBookLogic = (selectedArtMode: string = 'happy') => {
     "#BF00BF", "#00FFFF", "#FFC0CB", "#8B4513", "#808080", "#FFFFFF"
   ];
 
+  // Art mode configurations
+  const artModePrompts = {
+    happy: {
+      imagePrefix: "cheerful, bright, colorful, joyful",
+      storyStyle: "happy, uplifting, positive, cheerful story with a good ending",
+      voiceStyle: "cheerful and upbeat"
+    },
+    scary: {
+      imagePrefix: "spooky but not too frightening, Halloween-themed, mysterious",
+      storyStyle: "mildly spooky, mysterious adventure story suitable for children, with a brave ending",
+      voiceStyle: "mysterious but reassuring"
+    },
+    science: {
+      imagePrefix: "scientific, educational, discovery-themed, colorful laboratory or nature",
+      storyStyle: "educational science story about discovery, learning, and curiosity",
+      voiceStyle: "educational and encouraging"
+    },
+    moral: {
+      imagePrefix: "heartwarming, kind, caring, showing good values",
+      storyStyle: "moral story about kindness, sharing, honesty, or helping others",
+      voiceStyle: "warm and caring"
+    },
+    health: {
+      imagePrefix: "healthy, active, nutritious, exercise-themed, wellness",
+      storyStyle: "health and wellness story about eating well, exercise, or taking care of yourself",
+      voiceStyle: "encouraging and energetic"
+    },
+    adventure: {
+      imagePrefix: "adventurous, exciting, exploration-themed, journey",
+      storyStyle: "exciting adventure story about exploration, courage, and discovery",
+      voiceStyle: "exciting and adventurous"
+    },
+    nature: {
+      imagePrefix: "natural, outdoor, plants, animals, environmental",
+      storyStyle: "nature story about animals, plants, environment, and caring for our planet",
+      voiceStyle: "calm and nature-loving"
+    },
+    fantasy: {
+      imagePrefix: "magical, fantasy, unicorns, dragons, fairy tale",
+      storyStyle: "magical fantasy story with mythical creatures and wonder",
+      voiceStyle: "magical and whimsical"
+    }
+  };
   const ffmpegRef = useRef<any>(null);
 
   // Confetti celebration function
@@ -477,6 +521,7 @@ export const useAIDrawingBookLogic = (selectedArtMode: string = 'happy') => {
       const canvas = coloringCanvasRef.current;
       if (!canvas) return;
 
+      const modeConfig = artModePrompts[selectedArtMode as keyof typeof artModePrompts] || artModePrompts.happy;
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       if (!ctx) return;
 
@@ -681,7 +726,8 @@ export const useAIDrawingBookLogic = (selectedArtMode: string = 'happy') => {
     setIsGettingIdea(true);
     setError(null);
 
-    try {
+      const modeConfig = artModePrompts[selectedArtMode as keyof typeof artModePrompts] || artModePrompts.happy;
+      const idea = await GeminiService.getDrawingIdea(selectedArtMode, modeConfig.imagePrefix);
       const idea = await GeminiService.getDrawingIdea(selectedArtMode);
       setCurrentPrompt(idea);
     } catch (err: any) {
@@ -876,6 +922,7 @@ export const useAIDrawingBookLogic = (selectedArtMode: string = 'happy') => {
   const generateStory = async () => {
     // If selectedHistoryIndex is set and story exists in history, reuse it
     if (
+    const modeConfig = artModePrompts[selectedArtMode as keyof typeof artModePrompts] || artModePrompts.happy;
       selectedHistoryIndex !== null &&
       history[selectedHistoryIndex] &&
       history[selectedHistoryIndex].story &&
@@ -900,7 +947,7 @@ export const useAIDrawingBookLogic = (selectedArtMode: string = 'happy') => {
     setError(null);
 
     try {
-      const storyText = await GeminiService.generateStory(recognizedImage);
+      const generatedStory = await GeminiService.generateStory(recognizedImage, selectedArtMode, modeConfig.storyStyle);
       setStory(storyText);
       
       // Start typing effect for the story
@@ -976,6 +1023,7 @@ export const useAIDrawingBookLogic = (selectedArtMode: string = 'happy') => {
   const handleReadStory = async (storytellerType: 'pollinations' | 'elevenlabs' = 'pollinations') => {
     if (!story) return;
     
+    const modeConfig = artModePrompts[selectedArtMode as keyof typeof artModePrompts] || artModePrompts.happy;
     console.log('🎬 Starting handleReadStory');
     console.log('🎭 Using storyteller:', storytellerType);
     console.log('📸 Current storyImageBase64:', !!storyImageBase64);
@@ -999,7 +1047,8 @@ export const useAIDrawingBookLogic = (selectedArtMode: string = 'happy') => {
     let currentStoryImage = storyImageBase64;
     if (!currentStoryImage && selectedHistoryIndex !== null && history[selectedHistoryIndex]) {
       currentStoryImage = history[selectedHistoryIndex].storyImageBase64 || null;
-      console.log('📚 Retrieved story image from history:', !!currentStoryImage);
+        const storyWithStyle = `[${modeConfig.voiceStyle}] ${story}`;
+        const audioBlob = await ElevenLabsService.generateTTSAudio(storyWithStyle);
       // Update the state to ensure consistency
       if (currentStoryImage) {
         setStoryImageBase64(currentStoryImage);
@@ -1485,11 +1534,12 @@ const generateAndDownloadVideo = useCallback(async () => {
       const coloringCtx = coloringCanvas.getContext("2d");
       if (coloringCtx) {
         const img = new window.Image();
-        img.onload = () => {
+      const recognized = await GeminiService.recognizeImage(resizedSketch, selectedArtMode, modeConfig.imagePrefix);
           coloringCtx.clearRect(0, 0, coloringCanvas.width, coloringCanvas.height);
           coloringCtx.drawImage(img, 0, 0, coloringCanvas.width, coloringCanvas.height);
         };
-        img.src = "data:image/png;base64," + generatedBase64;
+      const enhancedPrompt = `${modeConfig.imagePrefix}, ${recognized}`;
+      const enhancedBlob = await PollinationsService.generateImage(enhancedPrompt);
       }
 
       // Add to history
@@ -1546,6 +1596,8 @@ const generateAndDownloadVideo = useCallback(async () => {
     showStoryImage,
     history,
     selectedHistoryIndex,
+    selectedArtMode,
+    setSelectedArtMode,
     showWebcam,
     colors,
     
