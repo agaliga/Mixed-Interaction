@@ -40,7 +40,6 @@ const AIDrawingBook: React.FC<AIDrawingBookProps> = ({ onBack }) => {
   const colorButtonRef = React.useRef<HTMLButtonElement>(null);
   const brushButtonRef = React.useRef<HTMLButtonElement>(null);
   const [isStoryMode, setIsStoryMode] = React.useState(false);
-  const [selectedArtMode, setSelectedArtMode] = React.useState<string>('happy');
 
   // Art mode options
   const artModes = [
